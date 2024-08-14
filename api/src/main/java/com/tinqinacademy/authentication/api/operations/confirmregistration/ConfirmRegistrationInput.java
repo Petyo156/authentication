@@ -13,6 +13,6 @@ import lombok.*;
 @ToString
 public class ConfirmRegistrationInput implements OperationInput {
     @NotBlank(message = "Confirmation code cannot be blank")
-    @Size(max = 10, min = 10, message = "Code must be valid")
+    @Size(max = 12, min = 12, message = "Code must be valid")
     private String confirmationCode;
 }

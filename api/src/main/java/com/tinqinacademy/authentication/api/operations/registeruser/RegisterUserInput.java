@@ -3,6 +3,7 @@ package com.tinqinacademy.authentication.api.operations.registeruser;
 import com.tinqinacademy.authentication.api.base.OperationInput;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Past;
 import lombok.*;
 
@@ -28,7 +29,7 @@ public class RegisterUserInput implements OperationInput {
     private String lastName;
 
     @Email(message = "Email must be valid")
-    @NotBlank(message = "Email cannot be blank")
+    @NotEmpty(message = "Email cannot be empty")
     private String email;
 
     @Past(message = "Birth date cannot be in the future")

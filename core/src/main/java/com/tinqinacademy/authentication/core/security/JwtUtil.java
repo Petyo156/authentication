@@ -1,4 +1,4 @@
-package com.tinqinacademy.authentication.core.processors.security;
+package com.tinqinacademy.authentication.core.security;
 
 import com.tinqinacademy.authentication.api.exceptions.differenexceptions.InvalidJwtException;
 import io.jsonwebtoken.Claims;
@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.Map;
 
 @Service
-public class JwtService {
+public class JwtUtil {
     @Value("${security.jwt.secret-key}")
     private String secretKey;
 

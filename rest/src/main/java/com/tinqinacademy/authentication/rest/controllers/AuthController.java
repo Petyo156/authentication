@@ -80,15 +80,12 @@ public class AuthController extends BaseController {
     }
 
     @PostMapping(RestApiMappingAuthentication.POST_LOGIN_PATH)
-    public ResponseEntity<?> loginUser(
-            @Valid @RequestBody LoginUserInput input) {
-
-        LoginUserInput loginUserInput = LoginUserInput.builder()
-                .username(input.getUsername())
-                .password(input.getPassword())
-                .build();
-
-        return handleOperation(loginUserOperationProcessor.process(loginUserInput), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginUserInput input) {
+        return loginUserOperationProcessor.process(input)
+                .map(output -> ResponseEntity.ok()
+                        .header("Authorization", "Bearer " + output.getToken())
+                        .build())
+                .getOrElseGet(error -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error));
     }
 
     @PostMapping(RestApiMappingAuthentication.POST_PROMOTE_PATH)

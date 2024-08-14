@@ -5,6 +5,7 @@ import com.tinqinacademy.authentication.api.exceptions.Errors;
 import com.tinqinacademy.authentication.core.errorhandling.ErrorMapper;
 import io.vavr.control.Either;
 import jakarta.validation.ConstraintViolation;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
@@ -45,5 +46,10 @@ public class BaseOperationProcessor {
         }
 
         return Either.right(input);
+    }
+
+    protected String generateConfirmationCode(){
+        int length = 12;
+        return RandomStringUtils.random(length);
     }
 }
