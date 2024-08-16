@@ -121,6 +121,7 @@ public class AuthController extends BaseController {
                 .phoneNumber(input.getPhoneNumber())
                 .firstName(input.getFirstName())
                 .lastName(input.getLastName())
+                .email(input.getEmail())
                 .build();
 
         return handleOperation(registerUserOperationProcessor.process(registerUserInput), HttpStatus.BAD_REQUEST);

@@ -1,5 +1,6 @@
 package com.tinqinacademy.authentication.persistence.entities;
 
+import com.tinqinacademy.authentication.persistence.models.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,4 +33,8 @@ public class User {
 
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private RoleType roleType;
 }

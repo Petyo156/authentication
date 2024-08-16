@@ -8,7 +8,6 @@ import com.tinqinacademy.authentication.core.errorhandling.ErrorMapper;
 import com.tinqinacademy.authentication.core.processors.BaseOperationProcessor;
 import com.tinqinacademy.authentication.persistence.entities.ConfirmationCode;
 import com.tinqinacademy.authentication.persistence.repositories.ConfirmationCodesRepository;
-import com.tinqinacademy.authentication.persistence.repositories.UsersRepository;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
 import jakarta.validation.Validator;
@@ -27,18 +26,14 @@ import static io.vavr.Predicates.instanceOf;
 @Service
 public class ConfirmRegistrationOperationProcessor extends BaseOperationProcessor implements ConfirmRegistrationOperation {
 
-    private final UsersRepository usersRepository;
     private final ConfirmationCodesRepository confirmationCodesRepository;
-    private final ErrorMapper errorMapper;
 
     @Autowired
     public ConfirmRegistrationOperationProcessor(ConversionService conversionService,
                                                  ErrorMapper errorMapper,
                                                  Validator validator,
-                                                 UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository) {
+                                                 ConfirmationCodesRepository confirmationCodesRepository) {
         super(conversionService, errorMapper, validator);
-        this.usersRepository = usersRepository;
-        this.errorMapper = errorMapper;
         this.confirmationCodesRepository = confirmationCodesRepository;
     }
 
@@ -47,13 +42,13 @@ public class ConfirmRegistrationOperationProcessor extends BaseOperationProcesso
         return Try.of(() -> {
                     log.info("Start confirmRegistration input: {}", input);
 
-                    Optional<ConfirmationCode> codeOptional = confirmationCodesRepository.findByCode(input.getConfirmationCode());
-                    if (codeOptional.isEmpty()) {
-                        throw new IllegalArgumentException("Invalid confirmation code");
-                    }
+                    validateInput(input);
 
-                    ConfirmationCode confirmationCode = codeOptional.get();
+                    ConfirmationCode confirmationCode = getConfirmationCodeIfValidOrElseThrow(input);
+
                     confirmationCode.setUsed(true);
+
+                    confirmationCodesRepository.save(confirmationCode);
 
                     ConfirmRegistrationOutput output = ConfirmRegistrationOutput.builder()
                             .build();
@@ -63,25 +58,20 @@ public class ConfirmRegistrationOperationProcessor extends BaseOperationProcesso
                 })
                 .toEither()
                 .mapLeft(throwable -> Match(throwable).of(
-                        Case($(instanceOf(IllegalArgumentException.class)),
-                                errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
+                        Case($(instanceOf(IllegalArgumentException.class)), errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
                 ));
     }
+
+    private ConfirmationCode getConfirmationCodeIfValidOrElseThrow(ConfirmRegistrationInput input) {
+        Optional<ConfirmationCode> codeOptional = confirmationCodesRepository.findByCode(input.getConfirmationCode());
+        if (codeOptional.isEmpty()) {
+            throw new IllegalArgumentException("Invalid confirmation code");
+        }
+        ConfirmationCode confirmationCode = codeOptional.get();
+
+        if (confirmationCode.isUsed()) {
+            throw new IllegalArgumentException("Confirmation code already used");
+        }
+        return confirmationCode;
+    }
 }
-
-
-//@Slf4j
-//@Service
-//public class ConfirmRegistrationOperationProcessor extends BaseOperationProcessor implements ConfirmRegistrationOperation {
-//
-//    @Autowired
-//    public ConfirmRegistrationOperationProcessor(ConversionService conversionService, ErrorMapper errorMapper, Validator validator) {
-//        super(conversionService, errorMapper, validator);
-//    }
-//
-//    @Override
-//    public Either<Errors, ConfirmRegistrationOutput> process(ConfirmRegistrationInput input) {
-//        return null;
-//    }
-//}
-

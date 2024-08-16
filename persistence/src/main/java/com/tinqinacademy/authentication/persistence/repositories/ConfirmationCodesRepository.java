@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface ConfirmationCodesRepository extends JpaRepository<ConfirmationCode, UUID> {
     Optional<ConfirmationCode> findByCode(String code);
     Optional<ConfirmationCode> findByUserId(UUID userId);
+
 }

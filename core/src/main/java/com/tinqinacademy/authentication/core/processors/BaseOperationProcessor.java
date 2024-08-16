@@ -1,9 +1,7 @@
 package com.tinqinacademy.authentication.core.processors;
 
 import com.tinqinacademy.authentication.api.base.OperationInput;
-import com.tinqinacademy.authentication.api.exceptions.Errors;
 import com.tinqinacademy.authentication.core.errorhandling.ErrorMapper;
-import io.vavr.control.Either;
 import jakarta.validation.ConstraintViolation;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +27,7 @@ public class BaseOperationProcessor {
         this.validator = validator;
     }
 
-    protected Either<Errors, ? extends OperationInput> validateInput(OperationInput input) {
+    protected void validateInput(OperationInput input) {
         Set<ConstraintViolation<OperationInput>> violations = validator.validate(input);
 
         if (!violations.isEmpty()) {
@@ -42,14 +40,13 @@ public class BaseOperationProcessor {
                     .message(String.join(", ", errorMessages))
                     .build();
 
-            return Either.left(errorResponse);
         }
 
-        return Either.right(input);
     }
 
     protected String generateConfirmationCode(){
         int length = 12;
         return RandomStringUtils.random(length);
     }
+
 }

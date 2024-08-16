@@ -15,15 +15,19 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import static io.vavr.API.*;
 import static io.vavr.Predicates.instanceOf;
@@ -50,28 +54,19 @@ public class LoginUserOperationProcessor extends BaseOperationProcessor implemen
         return Try.of(() -> {
                     log.info("Start loginUser input: {}", input);
 
-                    Optional<User> userOptional = usersRepository.findByUsername(input.getUsername());
-                    if(userOptional.isEmpty()){
-                        throw new IllegalArgumentException("User not found");
-                    }
+                    validateInput(input);
 
-                    User user = userOptional.get();
+                    User user = getUserIfExistsOrElseThrow(input);
 
-                    Optional<ConfirmationCode> confirmationCodeOptional = confirmationCodesRepository.findByUserId(user.getUserId());
-                    if(confirmationCodeOptional.isEmpty()){
-                        throw new IllegalArgumentException("Confirmation code is not found");
-                    }
+                    throwIfPasswordIsInvalid(input, user);
 
-                    ConfirmationCode confirmationCode = confirmationCodeOptional.get();
-                    if(!confirmationCode.isUsed()){
-                        throw new IllegalArgumentException("Confirmation code is not used");
-                    }
+                    throwIfUserIsNotConfirmed(user);
 
                     Map<String, String> claims = new HashMap<>();
                     claims.put("user_id", user.getUserId().toString());
                     claims.put("username", user.getUsername());
-
                     String jwt = jwtUtil.generateToken(claims);
+
                     LoginUserOutput output = LoginUserOutput.builder()
                             .token(jwt)
                             .build();
@@ -81,8 +76,29 @@ public class LoginUserOperationProcessor extends BaseOperationProcessor implemen
                 })
                 .toEither()
                 .mapLeft(throwable -> Match(throwable).of(
-                        Case($(instanceOf(IllegalArgumentException.class)),
-                                errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
+                        Case($(instanceOf(BadCredentialsException.class)), errorMapper.handleError(throwable, HttpStatus.UNAUTHORIZED)),
+                        Case($(instanceOf(IllegalArgumentException.class)), errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
                 ));
+    }
+
+    private void throwIfUserIsNotConfirmed(User user) {
+        Optional<ConfirmationCode> confirmationCodeOptional = confirmationCodesRepository.findByUserId(user.getUserId());
+        if (confirmationCodeOptional.isEmpty() || !confirmationCodeOptional.get().isUsed()) {
+            throw new IllegalArgumentException("User not confirmed");
+        }
+    }
+
+    private static void throwIfPasswordIsInvalid(LoginUserInput input, User user) {
+        if(!user.getPassword().equals(input.getPassword())){
+            throw new IllegalArgumentException("Invalid password.");
+        }
+    }
+
+    private User getUserIfExistsOrElseThrow(LoginUserInput input) {
+        Optional<User> userOptional = usersRepository.findByUsername(input.getUsername());
+        if(userOptional.isEmpty()){
+            throw new IllegalArgumentException("User does not exist.");
+        }
+        return userOptional.get();
     }
 }

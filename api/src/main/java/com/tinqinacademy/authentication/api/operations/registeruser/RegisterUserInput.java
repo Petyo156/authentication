@@ -29,7 +29,7 @@ public class RegisterUserInput implements OperationInput {
     private String lastName;
 
     @Email(message = "Email must be valid")
-    @NotEmpty(message = "Email cannot be empty")
+    @NotBlank(message = "Email cannot be blank")
     private String email;
 
     @Past(message = "Birth date cannot be in the future")
