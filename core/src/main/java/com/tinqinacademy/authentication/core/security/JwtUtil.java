@@ -37,7 +37,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    private String extractUserId(String token) {
+    public String extractUserId(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("user_id").toString();
     }

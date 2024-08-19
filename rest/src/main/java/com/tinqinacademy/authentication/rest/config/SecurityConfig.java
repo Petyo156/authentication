@@ -27,7 +27,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 RestApiMappingAuthentication.POST_REGISTER_PATH,
                                 RestApiMappingAuthentication.POST_LOGIN_PATH,
-                                RestApiMappingAuthentication.POST_CONFIRMREGISTRATION_PATH).permitAll()
+                                RestApiMappingAuthentication.POST_CONFIRMREGISTRATION_PATH,
+                                RestApiMappingAuthentication.POST_PROMOTE_PATH,
+                                RestApiMappingAuthentication.POST_DEMOTE_PATH).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(httpSecuritySessionManagementConfigurer ->

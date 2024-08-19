@@ -14,6 +14,7 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
@@ -45,33 +46,20 @@ public class PromoteUserOperationProcessor extends BaseOperationProcessor implem
 
                     validateInput(input);
 
-                    Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
-                    if (loggedUserOptional.isEmpty()) {
-                        throw new IllegalArgumentException("Logged user does not exist.");
-                    }
-
-                    if (loggedUserOptional.get().getRoleType().equals(RoleType.USER)) {
-                        throw new IllegalArgumentException("Logged user does not have admin privileges.");
-                    }
-
+                    Optional<User> loggedUserOptional = getLoggedUserOptionalIfUserExists(input);
                     User loggedUser = loggedUserOptional.get();
 
-                    Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
-                    if (userOptional.isEmpty()) {
-                        throw new IllegalArgumentException("User does not exist.");
-                    }
+                    throwIfLoggedUserIsNotAdmin(loggedUserOptional);
 
+                    Optional<User> userOptional = getUserOptionalIfUserExists(input);
                     User user = userOptional.get();
 
-                    if (loggedUser.getUserId().equals(user.getUserId())) {
-                        throw new IllegalArgumentException("User cannot promote himself.");
-                    }
+                    throwIfUserTriesToPromoteHimself(loggedUser, user);
 
                     user.setRoleType(RoleType.ADMIN);
                     usersRepository.save(user);
 
                     PromoteUserOutput output = PromoteUserOutput.builder().build();
-
                     log.info("End promoteUser output: {}", output);
                     return output;
                 })
@@ -79,5 +67,35 @@ public class PromoteUserOperationProcessor extends BaseOperationProcessor implem
                 .mapLeft(throwable -> Match(throwable).of(
                         Case($(instanceOf(IllegalArgumentException.class)), errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
                 ));
+    }
+
+    private static void throwIfUserTriesToPromoteHimself(User loggedUser, User user) {
+        if (loggedUser.getUserId().equals(user.getUserId())) {
+            throw new IllegalArgumentException("User cannot promote himself.");
+        }
+    }
+
+    @NotNull
+    private Optional<User> getUserOptionalIfUserExists(PromoteUserInput input) {
+        Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("User does not exist.");
+        }
+        return userOptional;
+    }
+
+    private static void throwIfLoggedUserIsNotAdmin(Optional<User> loggedUserOptional) {
+        if (loggedUserOptional.get().getRoleType().equals(RoleType.USER)) {
+            throw new IllegalArgumentException("Logged user does not have admin privileges.");
+        }
+    }
+
+    @NotNull
+    private Optional<User> getLoggedUserOptionalIfUserExists(PromoteUserInput input) {
+        Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
+        if (loggedUserOptional.isEmpty()) {
+            throw new IllegalArgumentException("Logged user does not exist.");
+        }
+        return loggedUserOptional;
     }
 }

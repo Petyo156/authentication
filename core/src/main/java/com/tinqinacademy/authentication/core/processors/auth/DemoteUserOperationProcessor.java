@@ -13,9 +13,11 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -43,27 +45,17 @@ public class DemoteUserOperationProcessor extends BaseOperationProcessor impleme
 
                     validateInput(input);
 
-                    Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
-                    if (loggedUserOptional.isEmpty()) {
-                        throw new IllegalArgumentException("Logged user does not exist.");
-                    }
+                    final String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
 
-                    if (loggedUserOptional.get().getRoleType().equals(RoleType.USER)) {
-                        throw new IllegalArgumentException("Logged user does not have admin privileges.");
-                    }
-
+                    Optional<User> loggedUserOptional = getLoggedUserOptionalIfUserExists(input);
                     User loggedUser = loggedUserOptional.get();
 
-                    Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
-                    if (userOptional.isEmpty()) {
-                        throw new IllegalArgumentException("User does not exist.");
-                    }
+                    throwIfUserIsNotAdmin(loggedUser);
 
+                    Optional<User> userOptional = getUserOptionalIfUserExists(input);
                     User user = userOptional.get();
 
-                    if (loggedUser.getUserId().equals(user.getUserId())) {
-                        throw new IllegalArgumentException("User cannot demote himself.");
-                    }
+                    throwIfUserTriesToDemoteHimself(loggedUser, user);
 
                     user.setRoleType(RoleType.USER);
                     usersRepository.save(user);
@@ -76,5 +68,35 @@ public class DemoteUserOperationProcessor extends BaseOperationProcessor impleme
                 .mapLeft(throwable -> Match(throwable).of(
                         Case($(instanceOf(IllegalArgumentException.class)), errorMapper.handleError(throwable, HttpStatus.BAD_REQUEST))
                 ));
+    }
+
+    private static void throwIfUserTriesToDemoteHimself(User loggedUser, User user) {
+        if (loggedUser.getUserId().equals(user.getUserId())) {
+            throw new IllegalArgumentException("User cannot demote himself.");
+        }
+    }
+
+    @NotNull
+    private Optional<User> getUserOptionalIfUserExists(DemoteUserInput input) {
+        Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("User does not exist.");
+        }
+        return userOptional;
+    }
+
+    private static void throwIfUserIsNotAdmin(User loggedUser) {
+        if (loggedUser.getRoleType().equals(RoleType.USER)) {
+            throw new IllegalArgumentException("Logged user does not have admin privileges.");
+        }
+    }
+
+    @NotNull
+    private Optional<User> getLoggedUserOptionalIfUserExists(DemoteUserInput input) {
+        Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
+        if (loggedUserOptional.isEmpty()) {
+            throw new IllegalArgumentException("Logged user does not exist.");
+        }
+        return loggedUserOptional;
     }
 }

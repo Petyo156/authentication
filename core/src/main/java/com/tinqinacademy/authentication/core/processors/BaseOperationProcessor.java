@@ -39,14 +39,13 @@ public class BaseOperationProcessor {
                     .httpStatus(HttpStatus.BAD_REQUEST)
                     .message(String.join(", ", errorMessages))
                     .build();
-
         }
 
     }
 
     protected String generateConfirmationCode(){
         int length = 12;
-        return RandomStringUtils.random(length);
+        return RandomStringUtils.randomAlphanumeric(length);
     }
 
 }
