@@ -90,9 +90,13 @@ public class RegisterUserOperationProcessor extends BaseOperationProcessor imple
     }
 
     private void throwIfUserAlreadyExists(RegisterUserInput input) {
-        Optional<User> existingUser = usersRepository.findByUsername(input.getUsername());
-        if (existingUser.isPresent()) {
-            throw new IllegalArgumentException("User already exists");
+        Optional<User> existingUserEmail = usersRepository.findByEmail(input.getEmail());
+        if (existingUserEmail.isPresent()) {
+            throw new IllegalArgumentException("User with this email already exists.");
+        }
+        Optional<User> existingUserUsername = usersRepository.findByUsername(input.getUsername());
+        if (existingUserUsername.isPresent()) {
+            throw new IllegalArgumentException("User with this username already exists.");
         }
     }
 

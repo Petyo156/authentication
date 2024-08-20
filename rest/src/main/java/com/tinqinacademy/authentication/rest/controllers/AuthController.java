@@ -6,11 +6,11 @@ import com.tinqinacademy.authentication.api.operations.changepassword.ChangePass
 import com.tinqinacademy.authentication.api.operations.confirmregistration.ConfirmRegistrationInput;
 import com.tinqinacademy.authentication.api.operations.demote.DemoteUserInput;
 import com.tinqinacademy.authentication.api.operations.login.LoginUserInput;
-import com.tinqinacademy.authentication.api.operations.login.LoginUserOperation;
 import com.tinqinacademy.authentication.api.operations.promote.PromoteUserInput;
 import com.tinqinacademy.authentication.api.operations.recoverpassword.RecoverPasswordInput;
 import com.tinqinacademy.authentication.api.operations.registeruser.RegisterUserInput;
 import com.tinqinacademy.authentication.core.processors.auth.*;
+import com.tinqinacademy.authentication.rest.context.LoggedUser;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,12 +28,14 @@ public class AuthController extends BaseController {
     private final RecoverPasswordOperationProcessor recoverPasswordOperationProcessor;
     private final RegisterUserOperationProcessor registerUserOperationProcessor;
 
+    private final LoggedUser loggedUser;
+
     private final ObjectMapper objectMapper;
 
     @Autowired
     public AuthController(ChangePasswordOperationProcessor changePasswordOperationProcessor, ConfirmRegistrationOperationProcessor confirmRegistrationOperationProcessor,
                           DemoteUserOperationProcessor demoteUserOperationProcessor, LoginUserOperationProcessor loginUserOperationProcessor, PromoteUserOperationProcessor promoteUserOperationProcessor,
-                          RecoverPasswordOperationProcessor recoverPasswordOperationProcessor, RegisterUserOperationProcessor registerUserOperationProcessor, ObjectMapper objectMapper) {
+                          RecoverPasswordOperationProcessor recoverPasswordOperationProcessor, RegisterUserOperationProcessor registerUserOperationProcessor, LoggedUser loggedUser, ObjectMapper objectMapper) {
         this.changePasswordOperationProcessor = changePasswordOperationProcessor;
         this.confirmRegistrationOperationProcessor = confirmRegistrationOperationProcessor;
         this.demoteUserOperationProcessor = demoteUserOperationProcessor;
@@ -41,6 +43,7 @@ public class AuthController extends BaseController {
         this.promoteUserOperationProcessor = promoteUserOperationProcessor;
         this.recoverPasswordOperationProcessor = recoverPasswordOperationProcessor;
         this.registerUserOperationProcessor = registerUserOperationProcessor;
+        this.loggedUser = loggedUser;
         this.objectMapper = objectMapper;
     }
 
@@ -72,8 +75,9 @@ public class AuthController extends BaseController {
     public ResponseEntity<?> demoteUser(
             @Valid @RequestBody DemoteUserInput input) {
 
-        DemoteUserInput demoteUserInput = DemoteUserInput.builder()
+        DemoteUserInput demoteUserInput = input.toBuilder()
                 .userId(input.getUserId())
+                .loggedUserId(loggedUser.getLoggedUser().getUserId().toString())
                 .build();
 
         return handleOperation(demoteUserOperationProcessor.process(demoteUserInput), HttpStatus.BAD_REQUEST);
@@ -94,6 +98,7 @@ public class AuthController extends BaseController {
 
         PromoteUserInput promoteUserInput = PromoteUserInput.builder()
                 .userId(input.getUserId())
+                .loggedUserId(loggedUser.getLoggedUser().getUserId().toString())
                 .build();
 
         return handleOperation(promoteUserOperationProcessor.process(promoteUserInput), HttpStatus.BAD_REQUEST);

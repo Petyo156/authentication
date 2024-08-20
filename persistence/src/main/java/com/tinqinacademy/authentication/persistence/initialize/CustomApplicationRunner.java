@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,11 +18,13 @@ public class CustomApplicationRunner implements ApplicationRunner {
 
     private final UsersRepository usersRepository;
     private final ConfirmationCodesRepository confirmationCodesRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public CustomApplicationRunner(UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository) {
+    public CustomApplicationRunner(UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository, PasswordEncoder passwordEncoder) {
         this.usersRepository = usersRepository;
         this.confirmationCodesRepository = confirmationCodesRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class CustomApplicationRunner implements ApplicationRunner {
         if (usersRepository.count() == 0) {
             usersRepository.save(User.builder()
                     .username("admin")
-                    .password("admin")
+                    .password(passwordEncoder.encode("admin"))
                     .email("admin@gmail.com")
                     .firstName("Admin")
                     .lastName("Admin")

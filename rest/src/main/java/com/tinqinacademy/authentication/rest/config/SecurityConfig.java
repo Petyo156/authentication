@@ -16,35 +16,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                RestApiMappingAuthentication.POST_REGISTER_PATH,
-                                RestApiMappingAuthentication.POST_LOGIN_PATH,
-                                RestApiMappingAuthentication.POST_CONFIRMREGISTRATION_PATH,
-                                RestApiMappingAuthentication.POST_PROMOTE_PATH,
-                                RestApiMappingAuthentication.POST_DEMOTE_PATH).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(httpSecuritySessionManagementConfigurer ->
-                        httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        return http.build();
+                .build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
     }
 }

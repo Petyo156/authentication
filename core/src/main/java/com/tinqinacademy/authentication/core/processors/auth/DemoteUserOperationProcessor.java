@@ -45,8 +45,6 @@ public class DemoteUserOperationProcessor extends BaseOperationProcessor impleme
 
                     validateInput(input);
 
-                    final String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
-
                     Optional<User> loggedUserOptional = getLoggedUserOptionalIfUserExists(input);
                     User loggedUser = loggedUserOptional.get();
 

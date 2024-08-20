@@ -64,7 +64,7 @@ public class ChangePasswordOperationProcessor extends BaseOperationProcessor imp
     }
 
     private void throwIfOldPassIsInvalid(ChangePasswordInput input, User user) {
-        if(!user.getPassword().equals(passwordEncoder.encode(input.getOldPassword()))){
+        if(!passwordEncoder.matches(input.getOldPassword(), user.getPassword())){
             throw new IllegalArgumentException("Invalid password.");
         }
     }

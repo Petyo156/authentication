@@ -15,14 +15,11 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -39,14 +36,16 @@ public class LoginUserOperationProcessor extends BaseOperationProcessor implemen
     private final JwtUtil jwtUtil;
     private final UsersRepository usersRepository;
     private final ConfirmationCodesRepository confirmationCodesRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public LoginUserOperationProcessor(ConversionService conversionService, ErrorMapper errorMapper, Validator validator,
-                                       JwtUtil jwtUtil, UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository) {
+                                       JwtUtil jwtUtil, UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository, PasswordEncoder passwordEncoder) {
         super(conversionService, errorMapper, validator);
         this.jwtUtil = jwtUtil;
         this.usersRepository = usersRepository;
         this.confirmationCodesRepository = confirmationCodesRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -71,6 +70,7 @@ public class LoginUserOperationProcessor extends BaseOperationProcessor implemen
                             .token(jwt)
                             .build();
 
+
                     log.info("End loginUser output: {}", output);
                     return output;
                 })
@@ -88,8 +88,8 @@ public class LoginUserOperationProcessor extends BaseOperationProcessor implemen
         }
     }
 
-    private static void throwIfPasswordIsInvalid(LoginUserInput input, User user) {
-        if(!user.getPassword().equals(input.getPassword())){
+    private void throwIfPasswordIsInvalid(LoginUserInput input, User user) {
+        if(!passwordEncoder.matches(input.getPassword(), user.getPassword())){
             throw new IllegalArgumentException("Invalid password.");
         }
     }
