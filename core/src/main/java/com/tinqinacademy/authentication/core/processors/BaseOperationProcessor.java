@@ -48,4 +48,9 @@ public class BaseOperationProcessor {
         return RandomStringUtils.randomAlphanumeric(length);
     }
 
+    protected String generateNewPassword(){
+        int length = 15;
+        return RandomStringUtils.randomAlphanumeric(length);
+    }
+
 }

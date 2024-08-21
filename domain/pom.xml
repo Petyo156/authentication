@@ -15,7 +15,11 @@
 
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.tinqinacademy.email</groupId>
+            <artifactId>restexport</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 

@@ -6,28 +6,24 @@ import com.tinqinacademy.authentication.api.operations.registeruser.RegisterUser
 import com.tinqinacademy.authentication.api.operations.registeruser.RegisterUserOutput;
 import com.tinqinacademy.authentication.core.errorhandling.ErrorMapper;
 import com.tinqinacademy.authentication.core.processors.BaseOperationProcessor;
+import com.tinqinacademy.authentication.domain.EmailFeignClient;
 import com.tinqinacademy.authentication.persistence.entities.ConfirmationCode;
 import com.tinqinacademy.authentication.persistence.entities.User;
 import com.tinqinacademy.authentication.persistence.models.RoleType;
 import com.tinqinacademy.authentication.persistence.repositories.ConfirmationCodesRepository;
 import com.tinqinacademy.authentication.persistence.repositories.UsersRepository;
+import com.tinqinacademy.email.api.operations.emaildetails.EmailDetailsOperationInput;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.vavr.API.*;
 import static io.vavr.Predicates.instanceOf;
@@ -39,14 +35,16 @@ public class RegisterUserOperationProcessor extends BaseOperationProcessor imple
     private final UsersRepository usersRepository;
     private final ConfirmationCodesRepository confirmationCodesRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailFeignClient emailFeignClient;
 
     @Autowired
     public RegisterUserOperationProcessor(ConversionService conversionService, ErrorMapper errorMapper, Validator validator,
-                                          UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository, PasswordEncoder passwordEncoder) {
+                                          UsersRepository usersRepository, ConfirmationCodesRepository confirmationCodesRepository, PasswordEncoder passwordEncoder, EmailFeignClient emailFeignClient) {
         super(conversionService, errorMapper, validator);
         this.usersRepository = usersRepository;
         this.confirmationCodesRepository = confirmationCodesRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailFeignClient = emailFeignClient;
     }
 
     @Override
@@ -68,12 +66,21 @@ public class RegisterUserOperationProcessor extends BaseOperationProcessor imple
                             .build();
                     usersRepository.save(user);
 
+                    String confirmationCodeString = generateConfirmationCode();
                     ConfirmationCode confirmationCode = ConfirmationCode.builder()
-                            .code(generateConfirmationCode())
+                            .code(confirmationCodeString)
                             .userId(user.getUserId())
                             .build();
 
                     confirmationCodesRepository.save(confirmationCode);
+
+                    EmailDetailsOperationInput emailDetailsOperationInput = EmailDetailsOperationInput.builder()
+                            .recipient(input.getEmail())
+                            .subject("Confirmation code")
+                            .msgBody("Your confirmation code is " + confirmationCodeString)
+                            .build();
+
+                    emailFeignClient.sendMail(emailDetailsOperationInput);
 
                     RegisterUserOutput output = RegisterUserOutput.builder()
                             .id(user.getUserId())
