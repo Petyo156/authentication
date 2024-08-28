@@ -74,7 +74,6 @@ public class DemoteUserOperationProcessor extends BaseOperationProcessor impleme
         }
     }
 
-    @NotNull
     private Optional<User> getUserOptionalIfUserExists(DemoteUserInput input) {
         Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
         if (userOptional.isEmpty()) {
@@ -89,7 +88,6 @@ public class DemoteUserOperationProcessor extends BaseOperationProcessor impleme
         }
     }
 
-    @NotNull
     private Optional<User> getLoggedUserOptionalIfUserExists(DemoteUserInput input) {
         Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
         if (loggedUserOptional.isEmpty()) {

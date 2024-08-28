@@ -8,4 +8,6 @@ public class RestApiMappingAuthentication {
     public static final String POST_CHANGEPASSWORD_PATH = "/auth/change-password";
     public static final String POST_PROMOTE_PATH = "/auth/promote";
     public static final String POST_DEMOTE_PATH = "/auth/demote";
+    public static final String POST_VALIDATETOKEN_PATH = "/auth/validate-token";
+    public final static String POST_LOGOUT_USER = "/auth/logout";
 }

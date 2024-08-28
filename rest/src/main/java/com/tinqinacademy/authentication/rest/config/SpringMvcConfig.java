@@ -18,6 +18,7 @@ public class SpringMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns(
                         RestApiMappingAuthentication.POST_CHANGEPASSWORD_PATH,
                         RestApiMappingAuthentication.POST_DEMOTE_PATH,
-                        RestApiMappingAuthentication.POST_PROMOTE_PATH);
+                        RestApiMappingAuthentication.POST_PROMOTE_PATH,
+                        RestApiMappingAuthentication.POST_LOGOUT_USER);
     }
 }

@@ -75,7 +75,6 @@ public class PromoteUserOperationProcessor extends BaseOperationProcessor implem
         }
     }
 
-    @NotNull
     private Optional<User> getUserOptionalIfUserExists(PromoteUserInput input) {
         Optional<User> userOptional = usersRepository.findByUserId(UUID.fromString(input.getUserId()));
         if (userOptional.isEmpty()) {
@@ -90,7 +89,6 @@ public class PromoteUserOperationProcessor extends BaseOperationProcessor implem
         }
     }
 
-    @NotNull
     private Optional<User> getLoggedUserOptionalIfUserExists(PromoteUserInput input) {
         Optional<User> loggedUserOptional = usersRepository.findByUserId(UUID.fromString(input.getLoggedUserId()));
         if (loggedUserOptional.isEmpty()) {

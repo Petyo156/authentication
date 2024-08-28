@@ -2,15 +2,21 @@ package com.tinqinacademy.authentication.rest.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinqinacademy.authentication.api.apimapping.RestApiMappingAuthentication;
+import com.tinqinacademy.authentication.api.exceptions.Errors;
 import com.tinqinacademy.authentication.api.operations.changepassword.ChangePasswordInput;
 import com.tinqinacademy.authentication.api.operations.confirmregistration.ConfirmRegistrationInput;
 import com.tinqinacademy.authentication.api.operations.demote.DemoteUserInput;
 import com.tinqinacademy.authentication.api.operations.login.LoginUserInput;
+import com.tinqinacademy.authentication.api.operations.logoutuser.LogoutUserInput;
+import com.tinqinacademy.authentication.api.operations.logoutuser.LogoutUserOutput;
 import com.tinqinacademy.authentication.api.operations.promote.PromoteUserInput;
 import com.tinqinacademy.authentication.api.operations.recoverpassword.RecoverPasswordInput;
 import com.tinqinacademy.authentication.api.operations.registeruser.RegisterUserInput;
+import com.tinqinacademy.authentication.api.operations.validateuser.ValidateUserInput;
+import com.tinqinacademy.authentication.api.operations.validateuser.ValidateUserOutput;
 import com.tinqinacademy.authentication.core.processors.auth.*;
 import com.tinqinacademy.authentication.rest.context.LoggedUser;
+import io.vavr.control.Either;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +33,8 @@ public class AuthController extends BaseController {
     private final PromoteUserOperationProcessor promoteUserOperationProcessor;
     private final RecoverPasswordOperationProcessor recoverPasswordOperationProcessor;
     private final RegisterUserOperationProcessor registerUserOperationProcessor;
+    private final ValidateUserOperationProcessor validateUserOperationProcessor;
+    private final LogoutUserOperationProcessor logoutUserOperationProcessor;
 
     private final LoggedUser loggedUser;
 
@@ -35,7 +43,7 @@ public class AuthController extends BaseController {
     @Autowired
     public AuthController(ChangePasswordOperationProcessor changePasswordOperationProcessor, ConfirmRegistrationOperationProcessor confirmRegistrationOperationProcessor,
                           DemoteUserOperationProcessor demoteUserOperationProcessor, LoginUserOperationProcessor loginUserOperationProcessor, PromoteUserOperationProcessor promoteUserOperationProcessor,
-                          RecoverPasswordOperationProcessor recoverPasswordOperationProcessor, RegisterUserOperationProcessor registerUserOperationProcessor, LoggedUser loggedUser, ObjectMapper objectMapper) {
+                          RecoverPasswordOperationProcessor recoverPasswordOperationProcessor, RegisterUserOperationProcessor registerUserOperationProcessor, ValidateUserOperationProcessor validateUserOperationProcessor, LogoutUserOperationProcessor logoutUserOperationProcessor, LoggedUser loggedUser, ObjectMapper objectMapper) {
         this.changePasswordOperationProcessor = changePasswordOperationProcessor;
         this.confirmRegistrationOperationProcessor = confirmRegistrationOperationProcessor;
         this.demoteUserOperationProcessor = demoteUserOperationProcessor;
@@ -43,6 +51,8 @@ public class AuthController extends BaseController {
         this.promoteUserOperationProcessor = promoteUserOperationProcessor;
         this.recoverPasswordOperationProcessor = recoverPasswordOperationProcessor;
         this.registerUserOperationProcessor = registerUserOperationProcessor;
+        this.validateUserOperationProcessor = validateUserOperationProcessor;
+        this.logoutUserOperationProcessor = logoutUserOperationProcessor;
         this.loggedUser = loggedUser;
         this.objectMapper = objectMapper;
     }
@@ -130,5 +140,23 @@ public class AuthController extends BaseController {
                 .build();
 
         return handleOperation(registerUserOperationProcessor.process(registerUserInput), HttpStatus.BAD_REQUEST);
+    }
+
+    @PostMapping(value = RestApiMappingAuthentication.POST_VALIDATETOKEN_PATH)
+    public ResponseEntity<?> validateUser(@RequestBody ValidateUserInput input) {
+        Either<Errors, ValidateUserOutput> output = validateUserOperationProcessor.process(input);
+
+        return handleOperation(output, HttpStatus.CREATED);
+    }
+
+    @PostMapping(value = RestApiMappingAuthentication.POST_LOGOUT_USER)
+    public ResponseEntity<?> logoutUser(@RequestBody LogoutUserInput request) {
+        LogoutUserInput input = request.toBuilder()
+                .token(loggedUser.getToken())
+                .build();
+
+        Either<Errors, LogoutUserOutput> output = logoutUserOperationProcessor.process(input);
+
+        return handleOperation(output, HttpStatus.CREATED);
     }
 }

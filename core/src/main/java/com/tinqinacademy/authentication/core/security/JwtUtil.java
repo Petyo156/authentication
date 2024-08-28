@@ -1,11 +1,13 @@
 package com.tinqinacademy.authentication.core.security;
 
 import com.tinqinacademy.authentication.api.exceptions.differenexceptions.InvalidJwtException;
+import com.tinqinacademy.authentication.persistence.repositories.BlacklistTokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @Service
 public class JwtUtil {
     @Value("${security.jwt.secret-key}")
@@ -21,7 +24,9 @@ public class JwtUtil {
     @Value("${security.jwt.expiration-time}")
     private Long jwtExpiration;
 
-    public Long getExpirationTime() {
+    private final BlacklistTokenRepository blackListTokenRepository;
+
+    private Long getExpirationTime() {
         return jwtExpiration;
     }
 
@@ -32,7 +37,7 @@ public class JwtUtil {
                 .builder()
                 .setClaims(claims)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + getExpirationTime()))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -57,7 +62,8 @@ public class JwtUtil {
 
     public boolean isTokenValid(String token) {
         try {
-            return extractExpiration(token).after(new Date(System.currentTimeMillis()));
+            return extractExpiration(token).after(new Date(System.currentTimeMillis()))
+                    && blackListTokenRepository.findByToken(token).isEmpty();
         } catch (InvalidJwtException ex) {
             return false;
         }
